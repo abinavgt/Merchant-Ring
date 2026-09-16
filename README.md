@@ -1,10 +1,10 @@
-# Merchant Ring ⚡
+# Merchant Ring 
 
-**Merchant Ring** is an interactive AI-powered FinTech & BFSI analytics dashboard designed for real-time UPI fraud ring detection, merchant risk profiling, and dispute monitoring. Built with React 19, Tailwind CSS, Recharts, and an integrated hands-free Voice AI Assistant.
+**Merchant Ring** is an interactive AI-powered FinTech & BFSI analytics dashboard designed for real-time UPI fraud ring detection, merchant risk profiling, and dispute monitoring and an integrated hands-free Voice AI Assistant.
 
 ---
 
-## 📌 Features & Highlights
+##  Features & Highlights
 
 * **Overview & KPI Tracking**: Monitor total transaction volume (₹23.92 Cr), failure rates (29.18%), dispute ratios (12.91%), and KYC verification stats.
 * **Merchant Risk & Fraud Hub**: Pinpoint high-risk merchant segments and track 128 repeat dispute users operating in organized fraud rings.
@@ -13,7 +13,7 @@
 
 ---
 
-## 📊 EDA & Data Preprocessing Workflow
+##  EDA & Data Preprocessing Workflow
 
 Before deriving any analytical findings or building the dashboard, the raw dataset underwent a comprehensive EDA and data preprocessing pipeline in Google Colab (`data-cleaned.ipynb`):
 
@@ -26,7 +26,7 @@ Before deriving any analytical findings or building the dashboard, the raw datas
 
 ---
 
-## 💡 Key Analytical Findings
+##  Key Analytical Findings
 
 After processing the full dataset, the following critical insights were identified:
 
@@ -37,7 +37,7 @@ After processing the full dataset, the following critical insights were identifi
 
 ---
 
-## 📁 Repository Structure
+##  Repository Structure
 
 ```
 Merchant-Ring/
@@ -62,7 +62,7 @@ Merchant-Ring/
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Setup
 
 1. **Clone the repository**:
    ```bash
@@ -88,8 +88,8 @@ Merchant-Ring/
 ---
 
 ## 🛠️ Tech Stack
-
-* **Frontend**: React 19, Vite 6, Tailwind CSS v4, Framer Motion
+* **Model Building**: Google Colab
+* **Frontend**: React, Tailwind CSS, Framer Motion, HTML
 * **Visualizations**: Recharts, Lucide React Icons
 * **Voice AI**: Web Speech API (Recognition & Synthesis)
-* **Deployment**: Vercel
+
