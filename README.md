@@ -4,7 +4,7 @@
 
 ---
 
-##  EDA & Data Preprocessing Workflow
+## 📊 [EDA & Data Preprocessing Workflow - Access Notebook](./data-cleaned.ipynb)
 
 ![Final Master Classification - Data Preprocessing Architecture](./assets/data_preprocessing_workflow.jpg)
 
