@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #050505;
+    color: #f1f5f9;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #404040;
+}
+
+/* Pure Black Spotify-Style Glass Cards */
+.spotify-card {
+  background: #121212;
+  border: 1px solid #222222;
+  border-radius: 16px;
+  transition: all 0.2s ease-in-out;
+}
+
+.spotify-card:hover {
+  border-color: #333333;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+}
+
+.spotify-pill-tab {
+  background: #181818;
+  border: 1px solid #282828;
+  color: #a7a7a7;
+  border-radius: 9999px;
+  transition: all 0.15s ease-in-out;
+}
+
+.spotify-pill-tab:hover {
+  background: #282828;
+  color: #ffffff;
+}
+
+.spotify-pill-tab-active {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  font-weight: 700;
+}
+
+.accent-green-text {
+  color: #1ed760;
+}
+
+.accent-green-bg {
+  background-color: #1ed760;
+}

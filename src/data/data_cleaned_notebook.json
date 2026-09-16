@@ -1,0 +1,1072 @@
+[
+  {
+    "id": 1,
+    "cell_type": "markdown",
+    "source": "# **1. Load and Explore Dataset**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 2,
+    "cell_type": "code",
+    "source": "import numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport seaborn as sns\n\nimport zipfile\nimport warnings\nwarnings.filterwarnings('ignore')\nimport os",
+    "execution_count": 135,
+    "outputs": []
+  },
+  {
+    "id": 3,
+    "cell_type": "code",
+    "source": "from google.colab import drive\ndrive.mount('/content/drive')",
+    "execution_count": 136,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "Drive already mounted at /content/drive; to attempt to forcibly remount, call drive.mount(\"/content/drive\", force_remount=True).\n"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "cell_type": "code",
+    "source": "#extract zip\nzip_path = '/content/drive/MyDrive/Fintech & BFSI.zip'\nextract_path = '/content/Fintech'\n\nif not os.path.exists(extract_path):\n  with zipfile.ZipFile(zip_path, 'r') as  zip_ref:\n    zip_ref.extractall(extract_path)",
+    "execution_count": 137,
+    "outputs": []
+  },
+  {
+    "id": 5,
+    "cell_type": "code",
+    "source": "os.listdir('/content/Fintech')",
+    "execution_count": 138,
+    "outputs": [
+      {
+        "type": "data",
+        "text": "['track1_merchants_master.csv',\n 'track1_upi_transactions.csv',\n 'track1_dataset_notes.txt',\n 'track1_kyc_records.csv',\n 'track1_chargebacks.json']",
+        "image": null
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "cell_type": "code",
+    "source": "import json # as json file included in directory\nimport re  # regex for replace, extrach and serach [0-9 a-z A-Z] and special characters like (+ * @) and many more",
+    "execution_count": 139,
+    "outputs": []
+  },
+  {
+    "id": 7,
+    "cell_type": "code",
+    "source": "transaction = pd.read_csv('Fintech/track1_upi_transactions.csv')\nmerchants = pd.read_csv('Fintech/track1_merchants_master.csv')\nkyc = pd.read_csv('Fintech/track1_kyc_records.csv')\n\nwith open('Fintech/track1_chargebacks.json') as j:   # json -> tabular dataframe\n  chargebacks = pd.json_normalize(json.load(j))",
+    "execution_count": 140,
+    "outputs": []
+  },
+  {
+    "id": 8,
+    "cell_type": "markdown",
+    "source": "### Quick track of all records from each files",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 9,
+    "cell_type": "code",
+    "source": "# quick check of all files\ndef showdata(df, filename):\n  print(f\"------{filename}------\")\n  print(\"\\nShape: \", df.shape)\n  print(\"Duplicated Rows: \", df.duplicated().sum())\n  print(\"\\nNull Values in each Column\")\n  print(df.isnull().sum())\n  print()\n\nshowdata(transaction, \"TRANSACTIONS\")\nshowdata(kyc, \"KYC RECORDS\")\nshowdata(merchants, \"MERCHANTS\")\nshowdata(chargebacks, \"CHARGEBACKS\")\n",
+    "execution_count": 141,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "------TRANSACTIONS------\n\nShape:  (20400, 8)\nDuplicated Rows:  400\n\nNull Values in each Column\ntxn_id            0\ntimestamp         0\nuser_id           0\nmerchant_id       0\namount            0\nutr            1024\nmcc            2926\nstatus            0\ndtype: int64\n\n------KYC RECORDS------\n\nShape:  (36400, 12)\nDuplicated Rows:  278\n\nNull Values in each Column\nuser_id                0\nfull_name              0\npan                 1896\naadhaar             2664\ndate_of_birth       2944\ncity                   0\nstate                  0\nmonthly_income      2933\noccupation             0\nsignup_timestamp    2910\nkyc_status             0\nrisk_segment           0\ndtype: int64\n\n------MERCHANTS------\n\nShape:  (6210, 11)\nDuplicated Rows:  12\n\nNull Values in each Column\nmerchant_id                    0\nmerchant_name                  0\nmcc                          514\nmerchant_category              0\nbusiness_type                  0\ncity                           0\nstate                          0\nonboarding_date              499\nsettlement_account          2451\nmerchant_status                0\ndeclared_avg_ticket_size     371\ndtype: int64\n\n------CHARGEBACKS------\n\nShape:  (2884, 13)\nDuplicated Rows:  84\n\nNull Values in each Column\ncomplaint_id               0\ntxn_id                     0\nuser_id                    0\nmerchant_id                0\ntransaction_timestamp      0\nreported_timestamp         0\ndisputed_amount            0\nreason_code                0\ncomplaint_text             0\nresolution_status          0\nbank_response_timestamp    0\nseverity                   0\nchannel                    0\ndtype: int64\n\n"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "cell_type": "markdown",
+    "source": "# **EDA & Data Preprocessing**\n\n\n\n",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 11,
+    "cell_type": "markdown",
+    "source": "**The list of Data Cleaning process we applied in the model is,**\n\n1. **Standardization** - *Bringing data values into a consistent format so that same entity is represented in uniform way*\n2.  **Normalization** - *converting data that is represented in different fromat into a common analytical fromat*\n3.  **Paring** - *taking data stored in different or unstructured representations and converting it into a structured format*\n4.  **Data Integrity** - *ensuring that the data remains accurate, consistent, valid and reliable throughout the cleaning and analysis process*\n5. **Handling missing & Invalid values** - *values were handled appropriately during parsing and numeric conversion rather than simply deleting the entire dataset* ( **Nan, NaT** )",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 12,
+    "cell_type": "markdown",
+    "source": "**Why we are not merging all the files for handling data, because**\n*  Handling different data entities - files are csv and json fromat\n*  Preventing Garbage in and Garbage Out data value's - prevents duplicated values\n* Readability - can trace the changes before and after the EDA analysis\n*   Memory and Computational Efficiency - saves time and takes less space",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 13,
+    "cell_type": "markdown",
+    "source": "# 2. **Transaction File**\n",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 14,
+    "cell_type": "code",
+    "source": "txn = transaction.copy() # for tracing the changes\ntxn.head()",
+    "execution_count": 142,
+    "outputs": [
+      {
+        "type": "data",
+        "text": "        txn_id            timestamp   user_id merchant_id        amount  \\\n0  TXN00011869  2026-01-15 00:11:30  USR45826     MCH7045      15722.34   \n1  TXN00010383  2026-01-17 20:09:44  USR79397     MCH5031    Rs. 6362.9   \n2  TXN00008297  2026-01-23 14:10:16  USR87810     MCH9809      15446.19   \n3  TXN00006448           1770063471  USR54287     MCH6928      12110.49   \n4  TXN00018792  2026-03-31 14:02:37  USR53865     MCH8121  Rs. 19432.94   \n\n             utr     mcc       status  \n0  UTR6498104698  5411.0    COMPLETED  \n1  UTR7656190355  4131.0   TXN_FAILED  \n2  UTR9037001889  5411.0            S  \n3  UTR5257823698  5411.0            S  \n4  UTR4204272894  4131.0  TXN_SUCCESS  ",
+        "image": null
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "cell_type": "markdown",
+    "source": "### As per my view from the data, the columns which required changes are,\n\n\n1.    **txn_id** - for every transaction there is unique id or key will be generatedand [ *txn_id should be unique & same format TXN + integer format* ]\n\n\n2.   **usr_id** and **merchant_id** - it can same as, same user and merchant can go through various payments [ *same format USR, MCH + integer fromat* ]\n3.   **timestamp** - as follow columns follows human redable format [ *YYYY-MM-DD HH:MM:SS* ] and remaining are in Epoch Time [ *10 digit integer designed for systems and database* ]\n4.   **amount** - inconsistent symbols like with [ *Rs. , Rs.   , and other symbols* ]\n5.   **status** - need to be mapped to its belonging\n\n\n\n",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 16,
+    "cell_type": "markdown",
+    "source": "### **2.1 txn_id column**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 17,
+    "cell_type": "code",
+    "source": "print(\"Total rows loaded in transaction file: \", len(txn))",
+    "execution_count": 143,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "Total rows loaded in transaction file:  20400\n"
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "cell_type": "code",
+    "source": "# just maintaining the first occurence of the txn_id, because every transaction id is unique\ntxn = txn.drop_duplicates(subset='txn_id', keep='first')\ntxn.shape",
+    "execution_count": 144,
+    "outputs": [
+      {
+        "type": "data",
+        "text": "(20000, 8)",
+        "image": null
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "cell_type": "markdown",
+    "source": "\n\n*   We have checked the uniquenss of the id [ *as kept only the first occurencre, remaining has been trimmed* ]\n*   From it, we have removed **400 rows**\n\n",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 20,
+    "cell_type": "markdown",
+    "source": "### **2.2 user_id, merchant_id and txn_id**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 21,
+    "cell_type": "code",
+    "source": "# for txn_id - we maintained title should be capital\ntxn['txn_id'] = (txn['txn_id'].astype('string').str.strip().str.upper())\n\n# removed the trailing spaces, title to capital for user_id and merchant_id\ntxn['user_id'] = (txn['user_id'].astype('string').str.strip().str.upper()\n       .str.replace(r'\\s+', '', regex=True))\n\ntxn['merchant_id'] = (\n    txn['merchant_id'].astype('string').str.strip()\n    .str.upper().str.replace(r'\\s+', '', regex=True))",
+    "execution_count": 145,
+    "outputs": []
+  },
+  {
+    "id": 22,
+    "cell_type": "markdown",
+    "source": "### **2.3 timestamp**\n\nAs per timestamp for data, it follows the **ISO**  *International Organization for Standardization* format. This is the standardization format of date and time [ **YYYY-MM-DD HH:MM:SS** ]",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 23,
+    "cell_type": "code",
+    "source": "def convert_timestamp(val):\n  if pd.isna(val):\n    return pd.NaT\n\n  val = str(val).strip() # converts int to string and removes the leading & trailing spaces\n\n  if val.isdigit():   # Numeric Unix timestamp\n    return pd.to_datetime(int(val), unit='s')\n\n  return pd.to_datetime(val, errors='coerce')\ntxn['timestamp'] = txn['timestamp'].apply(convert_timestamp)",
+    "execution_count": 146,
+    "outputs": []
+  },
+  {
+    "id": 24,
+    "cell_type": "markdown",
+    "source": "### **2.4 amount**\nThe transaction amount contained inconsistent currency formatting such as currency symbols/text and commas.",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 25,
+    "cell_type": "code",
+    "source": "# keeps only from [0-9 a-z A-Z] and decimal points and negative symbol\ntxn['amount'] = (txn['amount'].astype(str).str.replace(r'(?i)rs\\.?', '',regex=True)\n                 .str.replace(',', '',regex=False).str.strip())\n\ntxn['amount'] = pd.to_numeric(txn['amount'], errors='coerce') #(invalid entries safely become NaN)",
+    "execution_count": 147,
+    "outputs": []
+  },
+  {
+    "id": 26,
+    "cell_type": "markdown",
+    "source": "### **2.5 status**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 27,
+    "cell_type": "code",
+    "source": "# need to know what are the status updates\nprint(txn['status'].dropna().unique())",
+    "execution_count": 148,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "['COMPLETED' 'TXN_FAILED' 'S' 'TXN_SUCCESS' 'SUCCESS' 'FAILED' 'Success'\n 'Initiated' 'Pending' 'Fail' 'Declined' 'F' 'PENDING' 'PROCESSING']\n"
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "cell_type": "code",
+    "source": "# as we have seen the status has divided into various segments, will be mapped relevant segments\nstatus_map = {\n    'COMPLETED': 'Success','TXN_SUCCESS': 'Success','SUCCESS': 'Success','S': 'Success',\n    'TXN_FAILED': 'Failed','FAILED': 'Failed','FAIL': 'Failed','DECLINED': 'Failed','F': 'Failed',\n    'INITIATED': 'Pending','PENDING': 'Pending','PROCESSING': 'Pending'\n}\ntxn['status'] = txn['status'].map(status_map)\nprint(txn['status'].value_counts(dropna=True))",
+    "execution_count": 149,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "status\nSuccess    13625\nFailed      1192\nPending      540\nName: count, dtype: int64\n"
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "cell_type": "code",
+    "source": "print(txn.head())",
+    "execution_count": 150,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "        txn_id           timestamp   user_id merchant_id    amount  \\\n0  TXN00011869 2026-01-15 00:11:30  USR45826     MCH7045  15722.34   \n1  TXN00010383 2026-01-17 20:09:44  USR79397     MCH5031   6362.90   \n2  TXN00008297 2026-01-23 14:10:16  USR87810     MCH9809  15446.19   \n3  TXN00006448 2026-02-02 20:17:51  USR54287     MCH6928  12110.49   \n4  TXN00018792 2026-03-31 14:02:37  USR53865     MCH8121  19432.94   \n\n             utr     mcc   status  \n0  UTR6498104698  5411.0  Success  \n1  UTR7656190355  4131.0   Failed  \n2  UTR9037001889  5411.0  Success  \n3  UTR5257823698  5411.0  Success  \n4  UTR4204272894  4131.0  Success  \n"
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "cell_type": "markdown",
+    "source": "# **3. KYC File**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 31,
+    "cell_type": "code",
+    "source": "k = kyc.copy()\nprint(k.head())",
+    "execution_count": 151,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "     user_id        full_name         pan         aadhaar  \\\n0   USR16112  Dhriti Deshmukh  SEJAA8194O    715658320763   \n1   USR17216       Megha Jani  QT0ZZ5561X    023412025028   \n2  USR 45454       PANINI LAL  QCNTL9489O  2781 6299 9816   \n3   USR46189      Jack Parikh  RRVUI4059Q  0667 8032 7731   \n4   USR85256         Eta Ravi  ygvoi9236w    176258817110   \n\n         date_of_birth      city          state monthly_income  occupation  \\\n0  06/04/1967 12:14 AM    Bombay    Maharashtra          35119     Retired   \n1                  NaN   Lucknow  Uttar Pradesh          80907  Freelancer   \n2                  NaN   kolkata    West Bengal        ₹11,214      Farmer   \n3                  NaN  Amritsar         Punjab          27.3k     Student   \n4  1969-02-19 08:25:23     delhi          Delhi     INR 24,705    Salaried   \n\n      signup_timestamp kyc_status risk_segment  \n0  2025-12-02 02:18:16       Done          LOW  \n1           01-31-2024   Verified       medium  \n2  2026-01-30 23:57:18    Pending         High  \n3           09-04-2025   VERIFIED          low  \n4          03-Feb-2026   APPROVED          LOW  \n"
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "cell_type": "markdown",
+    "source": "**As per my view from the data, the columns which required changes are,**\n\n1. **user_id** - inconsistent format [ *need to remove the trailing spaces and proper format STR + integer* ]\n2. **full_name** - *Title of the first and second name should be capital*\n3. **pan** -  *should be unique, drop the duplicated values because*\n4. **aadhar** - *should be unique and remove the trailing spaces between the numbers*\n5. **date_of birth & signup_timestamp** - *just maintaining only YYYY-MM-DD fromat because most of the values in column does not have the time format*\n6. **monthly_income** - inconsistent symbols [ Rs. , Rs.. , .k] and others\n7. State - Title should be capital *italicized text*\n8. **kyc_status, risk_segment** - *map the relevant segment categories*",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 33,
+    "cell_type": "code",
+    "source": "print(k.shape)",
+    "execution_count": 152,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "(36400, 12)\n"
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "cell_type": "code",
+    "source": "print(kyc.isna().sum())",
+    "execution_count": 153,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "user_id                0\nfull_name              0\npan                 1896\naadhaar             2664\ndate_of_birth       2944\ncity                   0\nstate                  0\nmonthly_income      2933\noccupation             0\nsignup_timestamp    2910\nkyc_status             0\nrisk_segment           0\ndtype: int64\n"
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "cell_type": "markdown",
+    "source": "### **3.1 user_id**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 36,
+    "cell_type": "code",
+    "source": "k['user_id'] = (k['user_id'].astype('string').str.strip().str.upper())\nk['user_id'] = k['user_id'].str.replace(r'\\s+', '', regex=True) # remove space btw\n\n# Correct format: USR + 5 digits\nk.loc[~k['user_id'].str.fullmatch(r'USR\\d{5}', na=False),'user_id'] = pd.NA\nk = k.drop_duplicates(subset='user_id', keep='first')\n",
+    "execution_count": 154,
+    "outputs": []
+  },
+  {
+    "id": 37,
+    "cell_type": "markdown",
+    "source": "### **3.2 full_name**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 38,
+    "cell_type": "code",
+    "source": "k['full_name'] = (k['full_name'].astype(str).str.strip().str.title())",
+    "execution_count": 155,
+    "outputs": []
+  },
+  {
+    "id": 39,
+    "cell_type": "markdown",
+    "source": "### **3.3 pan**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 40,
+    "cell_type": "code",
+    "source": "k['pan'] = (k['pan'].astype('string').str.strip().str.upper())\nk = k.drop_duplicates(subset='pan', keep='first')",
+    "execution_count": 156,
+    "outputs": []
+  },
+  {
+    "id": 41,
+    "cell_type": "markdown",
+    "source": "### **3.4 aadhar**\n\n\n*   exactly 12 digit integer with unique values\n*   no trailing spaces between the integer\n\n",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 42,
+    "cell_type": "code",
+    "source": "\nk['aadhaar'] = (k['aadhaar'].astype('string').str.replace(r'\\D', '', regex=True).str.strip())\n\n# Keep only exactly 12-digit Aadhaar\nk.loc[~k['aadhaar'].str.fullmatch(r'\\d{12}', na=False),'aadhaar'] = pd.NA\nk = k.drop_duplicates(subset='aadhaar', keep='first')",
+    "execution_count": 157,
+    "outputs": []
+  },
+  {
+    "id": 43,
+    "cell_type": "markdown",
+    "source": "### **3.5 date_of_birth**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 44,
+    "cell_type": "code",
+    "source": "k['date_of_birth'] = pd.to_datetime(k['date_of_birth'],errors='coerce')\nk['date_of_birth'] = k['date_of_birth'].dt.strftime('%Y-%m-%d')",
+    "execution_count": 158,
+    "outputs": []
+  },
+  {
+    "id": 45,
+    "cell_type": "markdown",
+    "source": "### **3.6 monthly_income**\n*  The values are in inconsistent format, so this code removes [ ₹, INR, Rs., commas, .k, k,\nleading and trailing spaces *italicized text* ]\n*  whenever we get k , it turns to mathemtical understanding like [ *27.3k to 27300* ]\n*  The output will be in the format of string with no other character\n",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 46,
+    "cell_type": "code",
+    "source": "k['monthly_income'] = (k['monthly_income'].astype('string').str.strip()\n    .str.replace(r'(?i)₹|INR|Rs\\.?', '', regex=True).str.replace(',', '', regex=False).str.strip())\n\n\nk['monthly_income'] = k['monthly_income'].str.replace(\n    r'(?i)^(\\d+(?:\\.\\d+)?)k$',\n    lambda x: str(float(x.group(1)) * 1000),regex=True)\n\nk['monthly_income'] = pd.to_numeric(k['monthly_income'],errors='coerce')\nk['monthly_income'] = k['monthly_income'].fillna(k['monthly_income'].median())",
+    "execution_count": 159,
+    "outputs": []
+  },
+  {
+    "id": 47,
+    "cell_type": "markdown",
+    "source": "### **3.7 kyc_status** - data mapping",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 48,
+    "cell_type": "code",
+    "source": "print(k['kyc_status'].dropna().unique())\nprint(k['kyc_status'].value_counts(dropna=False))\n",
+    "execution_count": 160,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "['Done' 'Verified' 'Pending' 'VERIFIED' 'APPROVED' 'REJECTED' 'Reject'\n 'Rejected' 'V' 'KYC_DONE' 'Under Review' 'P' 'FAILED' 'IN_PROGRESS' 'R'\n 'PENDING']\nkyc_status\nVERIFIED        2329\nV               2320\nKYC_DONE        2320\nAPPROVED        2318\nVerified        2242\nDone            2216\nPENDING          598\nPending          540\nP                516\nIN_PROGRESS      515\nUnder Review     514\nRejected         347\nReject           301\nREJECTED         290\nR                288\nFAILED           264\nName: count, dtype: int64\n"
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "cell_type": "code",
+    "source": "k['kyc_status'] = (k['kyc_status'].astype('string').str.strip().str.upper())\n\nk['kyc_status'] = k['kyc_status'].replace({\n    'DONE': 'Verified','VERIFIED': 'Verified','APPROVED': 'Verified','V': 'Verified','KYC_DONE': 'Verified',\n    'PENDING': 'Pending','P': 'Pending','IN_PROGRESS': 'Pending','UNDER REVIEW': 'Pending',\n    'REJECTED': 'Rejected','REJECT': 'Rejected','R': 'Rejected','FAILED': 'Rejected'})\nprint(k['kyc_status'].value_counts(dropna=False))",
+    "execution_count": 161,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "kyc_status\nVerified    13745\nPending      2683\nRejected     1490\nName: count, dtype: Int64\n"
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "cell_type": "markdown",
+    "source": "### **3.8 risk_segment**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 51,
+    "cell_type": "code",
+    "source": "print(k['risk_segment'].dropna().unique())\nprint(k['risk_segment'].value_counts(dropna=False))",
+    "execution_count": 162,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "['LOW' 'medium' 'High' 'low' 'MEDIUM' 'high' 'Low' 'Medium' 'Unknown'\n 'HIGH' 'UNKNOWN' 'unknown']\nrisk_segment\nlow        3502\nLow        3459\nLOW        3431\nmedium     1614\nMedium     1599\nMEDIUM     1560\nHigh        636\nhigh        615\nHIGH        607\nUNKNOWN     321\nUnknown     287\nunknown     287\nName: count, dtype: int64\n"
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "cell_type": "code",
+    "source": "k['risk_segment'] = (k['risk_segment'].astype('string').str.strip().str.upper()\n    .replace({\n        'low': 'Low','Low': 'Low','LOW': 'Low',\n        'MEDIUM': 'Medium','Medium': 'Medium','MEDIUM': 'Medium',\n        'HIGH': 'High','High': 'High', 'high': 'High',\n        'UNKNOWN': 'High','unknown': 'High', 'Unknown': 'High'\n    }))\nprint(k['risk_segment'].value_counts())",
+    "execution_count": 163,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "risk_segment\nLow       10392\nMedium     4773\nHigh       2753\nName: count, dtype: Int64\n"
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "cell_type": "markdown",
+    "source": "### **3.9 signup_timstamp**\n\n\n\n\n",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 54,
+    "cell_type": "code",
+    "source": "k['signup_timestamp'] = pd.to_datetime(k['signup_timestamp'],\n    errors='coerce',format='mixed').dt.strftime('%Y-%m-%d')",
+    "execution_count": 164,
+    "outputs": []
+  },
+  {
+    "id": 55,
+    "cell_type": "markdown",
+    "source": "### **3.10 status**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 56,
+    "cell_type": "code",
+    "source": "print(k.head())",
+    "execution_count": 165,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "    user_id        full_name         pan       aadhaar date_of_birth  \\\n0  USR16112  Dhriti Deshmukh  SEJAA8194O  715658320763    1967-06-04   \n1  USR17216       Megha Jani  QT0ZZ5561X  023412025028           NaN   \n2  USR45454       Panini Lal  QCNTL9489O  278162999816           NaN   \n3  USR46189      Jack Parikh  RRVUI4059Q  066780327731           NaN   \n4  USR85256         Eta Ravi  YGVOI9236W  176258817110    1969-02-19   \n\n       city          state  monthly_income  occupation signup_timestamp  \\\n0    Bombay    Maharashtra         35119.0     Retired       2025-12-02   \n1   Lucknow  Uttar Pradesh         80907.0  Freelancer       2024-01-31   \n2   kolkata    West Bengal         11214.0      Farmer       2026-01-30   \n3  Amritsar         Punjab         27300.0     Student       2025-09-04   \n4     delhi          Delhi         24705.0    Salaried       2026-02-03   \n\n  kyc_status risk_segment  \n0   Verified          Low  \n1   Verified       Medium  \n2    Pending         High  \n3   Verified          Low  \n4   Verified          Low  \n"
+      }
+    ]
+  },
+  {
+    "id": 57,
+    "cell_type": "code",
+    "source": "print(k.isna().sum())",
+    "execution_count": 166,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "user_id                0\nfull_name              0\npan                    0\naadhaar                1\ndate_of_birth       2863\ncity                   0\nstate                  0\nmonthly_income         0\noccupation             0\nsignup_timestamp    2838\nkyc_status             0\nrisk_segment           0\ndtype: int64\n"
+      }
+    ]
+  },
+  {
+    "id": 58,
+    "cell_type": "markdown",
+    "source": "\n**As from the data insights**\n*   2863 person has the same date_of birth - it does not effect the data\n*   1 - uniqueness in aadhar, does not effect the respected values\n*   signup_timestamp does not effect the values , so we drop the column\n",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 59,
+    "cell_type": "code",
+    "source": "k = k.drop(columns=['signup_timestamp'])\nprint(k.columns)",
+    "execution_count": 167,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "Index(['user_id', 'full_name', 'pan', 'aadhaar', 'date_of_birth', 'city',\n       'state', 'monthly_income', 'occupation', 'kyc_status', 'risk_segment'],\n      dtype='object')\n"
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "cell_type": "markdown",
+    "source": "# **4. Merchant master File**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 61,
+    "cell_type": "code",
+    "source": "mm = merchants.copy()\nprint(mm.head())",
+    "execution_count": 168,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "  merchant_id               merchant_name       mcc merchant_category  \\\n0     mch2849  BHAVSAR, KOTA AND ZACHARIA  MCC-7011     hotel_lodging   \n1     MCH4314                Deshmukh Ltd      5699           Apparel   \n2     MCH1986     Bains, Chanda and Gh0sh      5311            Retail   \n3     mch3899              Goswami-Bath        4131    Transportation   \n4     MCH4859                   VASA-RAJU      5812        Restaurant   \n\n     business_type       city      state onboarding_date settlement_account  \\\n0  Private Limited   Ludhiana     Punjab      09-23-2025                NaN   \n1  PRIVATE_LIMITED  Jalandhar     Punjab             NaN         3021439858   \n2       individual  Jalandhar     Punjab      10/01/2026                NaN   \n3  Sole Proprietor  Hyderabad  Telangana     14-Jan-2023                NaN   \n4  SOLE_PROPRIETOR        Hyd  Telangana      1742180385           XXXX9523   \n\n  merchant_status declared_avg_ticket_size  \n0        Inactive             INR 2,432.18  \n1               I                   986.05  \n2               A             INR 1,427.52  \n3          ACTIVE                 -1271.48  \n4               A                  Rs. 214  \n"
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "cell_type": "code",
+    "source": "print(mm.shape)",
+    "execution_count": 169,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "(6210, 11)\n"
+      }
+    ]
+  },
+  {
+    "id": 63,
+    "cell_type": "markdown",
+    "source": "**As per my view from the data, the columns which required changes are,**\n1. **merchant_id** - *inconsistent fromat like [ mch, MCH, Mch, MCh ] - all need to be fromatted to MCH + integer*\n2. **merchant name** - *[ remove leading and trailing spaces, title of first and second name should be capital ]*\n3. **mcc** - *only less amount of data has the MCH fromat , so we remove it just going to keep the integer*\n4. **business_type, merchant_status, City** - *[ data mapping ] - need to be classified to relevant segement*\n5. **onboarding_date** - *[ Epoch time and month in str to consistent format - YYYY:MM-DD ]*\n6. **declared_avg_ticket_size** - *[ removed the symbols, comma;s , negative and zero value to avg of the column ]*",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 64,
+    "cell_type": "code",
+    "source": "print(merchants.isna().sum())",
+    "execution_count": 170,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "merchant_id                    0\nmerchant_name                  0\nmcc                          514\nmerchant_category              0\nbusiness_type                  0\ncity                           0\nstate                          0\nonboarding_date              499\nsettlement_account          2451\nmerchant_status                0\ndeclared_avg_ticket_size     371\ndtype: int64\n"
+      }
+    ]
+  },
+  {
+    "id": 65,
+    "cell_type": "markdown",
+    "source": "### **4,1 merchant_id**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 66,
+    "cell_type": "code",
+    "source": "mm['merchant_id'] = (\n    mm['merchant_id']\n    .astype('string')\n    .str.strip()\n    .str.upper()\n)\nmm = mm.drop_duplicates(subset='merchant_id', keep='first')\nprint(\"Removed Duplicate Merchant IDs\", mm.shape)",
+    "execution_count": 171,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "Removed Duplicate Merchant IDs (4872, 11)\n"
+      }
+    ]
+  },
+  {
+    "id": 67,
+    "cell_type": "code",
+    "source": "mm['merchant_name'] = (mm['merchant_name'].astype('string').str.strip().str.title())",
+    "execution_count": 172,
+    "outputs": []
+  },
+  {
+    "id": 68,
+    "cell_type": "markdown",
+    "source": "### **4.2 mcc**\nHere mcc stands for **Merchant Category Code**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 69,
+    "cell_type": "code",
+    "source": "# removed the trailing spaces and inconsistent format\nmm['mcc'] = (mm['mcc'].astype('string').str.replace(r'\\D', '', regex=True).str.strip())\nmm['mcc'] = pd.to_numeric(mm['mcc'], errors='coerce')",
+    "execution_count": 173,
+    "outputs": []
+  },
+  {
+    "id": 70,
+    "cell_type": "markdown",
+    "source": "### **4.3 business_type**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 71,
+    "cell_type": "code",
+    "source": "print(mm['business_type'].dropna().unique())",
+    "execution_count": 174,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "['Private Limited' 'PRIVATE_LIMITED' 'individual' 'Sole Proprietor'\n 'SOLE_PROPRIETOR' 'PARTNERSHIP' 'INDIVIDUAL' 'PRIVATE-LIMITED'\n 'partnership' 'SOLE-PROPRIETOR' 'sole_proprietor' 'Partnership'\n 'private_limited' 'Individual']\n"
+      }
+    ]
+  },
+  {
+    "id": 72,
+    "cell_type": "code",
+    "source": "mm['business_type'] = (mm['business_type'].astype('string').str.strip().str.upper()\n    .replace({\n        'Private Limited': 'Private','private_limited': 'Private',\n        'PRIVATE_LIMITED': 'Private','PRIVATE LIMITED': 'Private',\n        'PRIVATE-LIMITED': 'Private','Private': 'Private',\n\n        'individual': 'Individual','INDIVIDUAL': 'Individual','Sole Proprieter': 'Sole Proprietor',\n        'SOLE_PROPRIETOR': 'Sole Proprietor','sole_proprietor': 'Sole Proprietor',\n        'SOLE-PROPRIETOR': 'Sole Proprietor','SOLE PROPRIETOR': 'Sole Proprietor',\n\n        'PARTNERSHIP': 'Partnership','partnership': 'Partnership','Partnership': 'Partnership'\n    }))\nprint(mm['business_type'].value_counts(dropna=False))",
+    "execution_count": 175,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "business_type\nIndividual         1250\nSole Proprietor    1226\nPrivate            1207\nPartnership        1189\nName: count, dtype: Int64\n"
+      }
+    ]
+  },
+  {
+    "id": 73,
+    "cell_type": "markdown",
+    "source": "### **4.4 city**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 74,
+    "cell_type": "code",
+    "source": "print(mm['city'].dropna().unique())",
+    "execution_count": 176,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "['Ludhiana' 'Jalandhar' 'Hyderabad' 'Hyd' 'Chennai' 'JPR' 'chennai'\n 'Amritsar' 'jaipur' 'ludhiana' 'Madras' 'lucknow' 'DELHI' 'mumbai'\n 'amritsar' 'Jalandar' 'Delhi' 'Mumbai' 'Jaipur' 'kolkata' 'pune' 'Poona'\n 'LKO' 'Bangalore' 'Lucknow' 'Calcutta' 'delhi' 'bengaluru' 'LDH' 'BLR'\n 'Kolkata' 'Bengaluru' 'Dilli' 'jalandhar' 'Bombay' 'MUMBAI' 'ASR'\n 'HYDERABAD' 'New Delhi' 'Pune' 'Mumbay']\n"
+      }
+    ]
+  },
+  {
+    "id": 75,
+    "cell_type": "code",
+    "source": "mm['city'] = (mm['city'].astype('string').str.strip().str.upper()\n    .replace({\n        'LUDHIANA': 'Ludhiana','LDH': 'Ludhiana',\n        'JALANDHAR': 'Jalandhar','JALANDAR': 'Jalandhar',\n        'HYDERABAD': 'Hyderabad','HYD': 'Hyderabad',\n        'CHENNAI': 'Chennai','MADRAS': 'Chennai',\n        'JAIPUR': 'Jaipur','JPR': 'Jaipur',\n        'AMRITSAR': 'Amritsar','ASR': 'Amritsar',\n        'LUCKNOW': 'Lucknow','LKO': 'Lucknow',\n        'DELHI': 'Delhi','DILLI': 'Delhi','NEW DELHI': 'Delhi',\n        'MUMBAI': 'Mumbai','BOMBAY': 'Mumbai','MUMBAY': 'Mumbai',\n        'KOLKATA': 'Kolkata','CALCUTTA': 'Kolkata',\n        'PUNE': 'Pune','POONA': 'Pune',\n        'BANGALORE': 'Bengaluru','BENGALURU': 'Bengaluru','BLR': 'Bengaluru'\n    }))\nprint(mm['city'].value_counts(dropna=False))",
+    "execution_count": 177,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "city\nChennai      441\nBengaluru    423\nJalandhar    418\nDelhi        415\nKolkata      406\nJaipur       401\nPune         400\nHyderabad    399\nLucknow      398\nMumbai       396\nAmritsar     394\nLudhiana     381\nName: count, dtype: Int64\n"
+      }
+    ]
+  },
+  {
+    "id": 76,
+    "cell_type": "markdown",
+    "source": "### **4.5 onboarding_date**\n\n\n*   normalize the months [Jan, Feb, Mar] to  generalize fromat\n*   remove trailing and leading spaces\n",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 77,
+    "cell_type": "code",
+    "source": "def clean_onboarding_date(value):\n    if pd.isna(value):\n        return pd.NaT\n    value = str(value).strip()\n\n    if value.isdigit() and len(value) == 10:\n        return pd.to_datetime(int(value), unit='s', errors='coerce')\n    return pd.to_datetime(value, errors='coerce')\n\nmm['onboarding_date'] = mm['onboarding_date'].apply(clean_onboarding_date)\nmm['onboarding_date'] = mm['onboarding_date'].dt.strftime('%Y-%m-%d')\n",
+    "execution_count": 178,
+    "outputs": []
+  },
+  {
+    "id": 78,
+    "cell_type": "markdown",
+    "source": "### **4.6 settlement_account**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 79,
+    "cell_type": "code",
+    "source": "mm['settlement_account'] = (mm['settlement_account'].astype('string').str.strip().str.upper())\n# Convert blank strings to missing values\nmm['settlement_account'] = mm['settlement_account'].replace(r'^\\s*$',pd.NA,regex=True)\n",
+    "execution_count": 179,
+    "outputs": []
+  },
+  {
+    "id": 80,
+    "cell_type": "markdown",
+    "source": "### **4.7 merchant_status**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 81,
+    "cell_type": "code",
+    "source": "print(mm['merchant_status'].dropna().unique())",
+    "execution_count": 180,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "['Inactive' 'I' 'A' 'ACTIVE' 'Active' 'Live' 'Enabled' 'SUSPENDED' 'Hold'\n 'Disabled' 'INACTIVE' 'Closed' 'Blocked' 'Suspended' 'S']\n"
+      }
+    ]
+  },
+  {
+    "id": 82,
+    "cell_type": "code",
+    "source": "mm['merchant_status'] = (mm['merchant_status'].astype('string').str.strip().str.upper()\n    .replace({\n        'ACTIVE': 'Active','A': 'Active','LIVE': 'Active','ENABLED': 'Active',\n        'INACTIVE': 'Inactive','I': 'Inactive','CLOSED': 'Inactive','DISABLED': 'Inactive',\n        'SUSPENDED': 'Suspended','S': 'Suspended','HOLD': 'Suspended','BLOCKED': 'Suspended'\n    }))\n\nprint(mm['merchant_status'].value_counts(dropna=False))",
+    "execution_count": 181,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "merchant_status\nActive       3997\nInactive      567\nSuspended     308\nName: count, dtype: Int64\n"
+      }
+    ]
+  },
+  {
+    "id": 83,
+    "cell_type": "markdown",
+    "source": "### **4.8 declared_avg_ticket_size**\n\n* as from the data, some of the data has [ **negative values, zero and positive** ] will be averaged to positive number using **median**\n* will handle all the null values\n* it will handle the duplicated values from the data",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 84,
+    "cell_type": "code",
+    "source": "mm['declared_avg_ticket_size'] = (mm['declared_avg_ticket_size'].astype('string').str.strip()\n    .str.replace(r'(?i)₹|INR|Rs\\.?', '', regex=True)\n    .str.replace(',', '', regex=False).str.strip())\n\nmm['declared_avg_ticket_size'] = pd.to_numeric(mm['declared_avg_ticket_size'],errors='coerce')\n\nmm.loc[mm['declared_avg_ticket_size'] < 0,'declared_avg_ticket_size'] = pd.NA\nmedian_ticket = mm['declared_avg_ticket_size'].median()\n\nmm['declared_avg_ticket_size'] = (\n    mm['declared_avg_ticket_size'].fillna(median_ticket))",
+    "execution_count": 182,
+    "outputs": []
+  },
+  {
+    "id": 85,
+    "cell_type": "markdown",
+    "source": "### **4.9 status**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 86,
+    "cell_type": "code",
+    "source": "print(mm.head())",
+    "execution_count": 183,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "  merchant_id               merchant_name     mcc merchant_category  \\\n0     MCH2849  Bhavsar, Kota And Zacharia  7011.0     hotel_lodging   \n1     MCH4314                Deshmukh Ltd  5699.0           Apparel   \n2     MCH1986     Bains, Chanda And Gh0Sh  5311.0            Retail   \n3     MCH3899                Goswami-Bath  4131.0    Transportation   \n4     MCH4859                   Vasa-Raju  5812.0        Restaurant   \n\n     business_type       city      state onboarding_date settlement_account  \\\n0          Private   Ludhiana     Punjab      2025-09-23               <NA>   \n1          Private  Jalandhar     Punjab             NaN         3021439858   \n2       Individual  Jalandhar     Punjab      2026-10-01               <NA>   \n3  Sole Proprietor  Hyderabad  Telangana      2023-01-14               <NA>   \n4  Sole Proprietor  Hyderabad  Telangana      2025-03-17           XXXX9523   \n\n  merchant_status  declared_avg_ticket_size  \n0        Inactive                   2432.18  \n1        Inactive                    986.05  \n2          Active                   1427.52  \n3          Active                   1218.95  \n4          Active                     214.0  \n"
+      }
+    ]
+  },
+  {
+    "id": 87,
+    "cell_type": "code",
+    "source": "print(mm.isna().sum())",
+    "execution_count": 184,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "merchant_id                    0\nmerchant_name                  0\nmcc                          515\nmerchant_category              0\nbusiness_type                  0\ncity                           0\nstate                          0\nonboarding_date              405\nsettlement_account          1967\nmerchant_status                0\ndeclared_avg_ticket_size       0\ndtype: int64\n"
+      }
+    ]
+  },
+  {
+    "id": 88,
+    "cell_type": "markdown",
+    "source": "# **5. Chargebacks file - json**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 89,
+    "cell_type": "code",
+    "source": "js = chargebacks.copy()\nprint(js.head())",
+    "execution_count": 185,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "  complaint_id       txn_id   user_id merchant_id transaction_timestamp  \\\n0   CBK0002082  TXN00004325  usr97580     mch1127            2026/01/28   \n1   CBK0001941  TXN00003720  USR54113        3835   25/02/2026 10:24 AM   \n2   CBK0001799  TXN00012539  USR17980     mch3700            2026/02/04   \n3   CBK0002465  TXN00017802  USR76148     MCH4534           30-Mar-2026   \n4   CBK0001870  TXN00015944  USR24660     MCH1686           09-Jan-2026   \n\n  reported_timestamp disputed_amount             reason_code  \\\n0         02-01-2026                  Merchant Not Delivered   \n1         1772691855          414.69       login compromised   \n2         02-05-2026       Rs. 7,039          customer issue   \n3        01-Apr-2026         1303.05              no service   \n4         1768424501         1459.42  merchant service issue   \n\n                                      complaint_text resolution_status  \\\n0            Customer says amount was debited twice.            CLOSED   \n1  User reports money deducted but merchant denie...       In Progress   \n2  merchant service was not delivered after payment.              OPEN   \n3  Suspicious high-value payment disputed by cust...          Rejected   \n4  Merchant service was not delivered after payment.       In Progress   \n\n  bank_response_timestamp  severity      channel  \n0     2026-02-10 03:19:10  Critical          ivr  \n1     12/03/2026 06:24 AM         H  Call Center  \n2              06/03/2026        P4          IVR  \n3             07-Apr-2026         H          ivr  \n4              01-26-2026       Low          App  \n"
+      }
+    ]
+  },
+  {
+    "id": 90,
+    "cell_type": "code",
+    "source": "print(js.shape)",
+    "execution_count": 186,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "(2884, 13)\n"
+      }
+    ]
+  },
+  {
+    "id": 91,
+    "cell_type": "markdown",
+    "source": "### **5.1 user_id**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 92,
+    "cell_type": "code",
+    "source": "js['user_id'] = (js['user_id'].astype('string').str.strip().str.upper()\n    .str.replace(r'\\s+', '', regex=True).str.replace(r'^URR', 'USR', regex=True))\n",
+    "execution_count": 187,
+    "outputs": []
+  },
+  {
+    "id": 93,
+    "cell_type": "markdown",
+    "source": "### **5.2 merchant_id**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 94,
+    "cell_type": "markdown",
+    "source": "* in column , some of the value's does not have MCH\n*  and also inconsistent format like [ **mch, MCH, McH** ] will deals it to **MCH + integer format**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 95,
+    "cell_type": "code",
+    "source": "js['merchant_id'] = (\n    js['merchant_id'].astype('string').str.strip()\n    .str.upper().str.replace(r'\\s+', '', regex=True))\n\njs['merchant_id'] = js['merchant_id'].apply(\n    lambda x: 'MCH' + x if pd.notna(x) and not x.startswith('MCH') else x)",
+    "execution_count": 188,
+    "outputs": []
+  },
+  {
+    "id": 96,
+    "cell_type": "markdown",
+    "source": "### **5.3 complaint_id and txn_id**\n*  *here txn_id and complaint_id cannot be duplicate - take example as rms as it deals with unique key fro all the queries*",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 97,
+    "cell_type": "code",
+    "source": "print(\"Duplicate complaint_id:\",chargebacks['complaint_id'].duplicated().sum())\nprint(\"Duplicate txn_id:\",chargebacks['txn_id'].duplicated().sum())",
+    "execution_count": 189,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "Duplicate complaint_id: 84\nDuplicate txn_id: 302\n"
+      }
+    ]
+  },
+  {
+    "id": 98,
+    "cell_type": "code",
+    "source": "js = js.drop_duplicates(subset='txn_id', keep='first')\n\nprint(\"Duplicate txn_id remaining:\", js['txn_id'].duplicated().sum())\nprint(\"New shape:\", js.shape)",
+    "execution_count": 190,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "Duplicate txn_id remaining: 0\nNew shape: (2582, 13)\n"
+      }
+    ]
+  },
+  {
+    "id": 99,
+    "cell_type": "markdown",
+    "source": "### **5.4 transaction_timestamp, reported_timestamp & bank_response_timestamp**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 100,
+    "cell_type": "code",
+    "source": "def clean_date(value):\n    if pd.isna(value):\n        return pd.NaT\n    value = str(value).strip()\n\n    if value.isdigit() and len(value) == 10:\n        return pd.to_datetime(int(value), unit='s', errors='coerce')\n    return pd.to_datetime(value, errors='coerce')\n\ntimestamp_columns = ['transaction_timestamp','reported_timestamp','bank_response_timestamp']\n\nfor col in timestamp_columns:\n    js[col] = (js[col].apply(clean_date).dt.strftime('%Y-%m-%d'))",
+    "execution_count": 191,
+    "outputs": []
+  },
+  {
+    "id": 101,
+    "cell_type": "markdown",
+    "source": "### **5.5 disputed_amount**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 102,
+    "cell_type": "code",
+    "source": "js['disputed_amount'] = (js['disputed_amount'].astype('string').str.strip()\n    .str.replace(r'(?i)₹|INR|Rs\\.?', '', regex=True)\n    .str.replace(',', '', regex=False).str.strip())\n\njs['disputed_amount'] = pd.to_numeric(js['disputed_amount'],errors='coerce')\n",
+    "execution_count": 192,
+    "outputs": []
+  },
+  {
+    "id": 103,
+    "cell_type": "markdown",
+    "source": "### **5.5 complaint_text & reason_code**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 104,
+    "cell_type": "code",
+    "source": "# for cleaning complaint_text\njs['complaint_text'] = (js['complaint_text'].astype('string').str.replace(r'\\bNA\\b', '', regex=True)\n    .str.replace(r'[^A-Za-z0-9\\s]', '', regex=True)\n    .str.replace(r'\\s+', ' ', regex=True).str.strip().str.title())\n\n\n# for cleaning reason_code\njs['reason_code'] = (js['reason_code'].astype('string').str.replace(r'\\bNA\\b', '', regex=True)\n    .str.replace(r'[^A-Za-z0-9\\s]', '', regex=True)\n    .str.replace(r'\\s+', ' ', regex=True).str.strip().str.title())",
+    "execution_count": 193,
+    "outputs": []
+  },
+  {
+    "id": 105,
+    "cell_type": "markdown",
+    "source": "### **5.6 resolution_status**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 106,
+    "cell_type": "code",
+    "source": "print(js['resolution_status'].dropna().unique())\nprint(js['resolution_status'].value_counts(dropna=False))\n",
+    "execution_count": 194,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "['CLOSED' 'In Progress' 'OPEN' 'Rejected' 'Closed' 'Open' 'IN_PROGRESS'\n 'Resolved' 'WIP' 'RESOLVED' 'REJECTED' 'Pending Bank' 'PENDING_BANK']\nresolution_status\nPending Bank    224\nCLOSED          222\nRejected        214\nOpen            208\nRESOLVED        206\nPENDING_BANK    206\nIN_PROGRESS     195\nOPEN            193\nClosed          191\nREJECTED        190\nWIP             183\nResolved        181\nIn Progress     169\nName: count, dtype: int64\n"
+      }
+    ]
+  },
+  {
+    "id": 107,
+    "cell_type": "code",
+    "source": "js['resolution_status'] = (js['resolution_status'].astype('string').str.strip().str.upper()\n    .replace({\n        'RESOLVED': 'Resolved','Resolved': 'Resolved','Closed': 'Resolved',\n\n        'Pending Bank': 'Pending','PENDING_BANK': 'Pending','PENDING BANK': 'Pending',\n        'OPEN': 'Pending', 'PENDING': 'Pending','IN_PROGRESS': 'Pending','In Progress': 'Pending',\n        'Open': 'Pending','WIP': 'Pending',\n\n        'Rejected': 'Rejected','REJECT': 'Rejected','REJECTED': 'Rejected','DECLINED': 'Rejected'\n    }))\nprint(js['resolution_status'].value_counts())",
+    "execution_count": 195,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "resolution_status\nPending        1209\nCLOSED          413\nRejected        404\nResolved        387\nIN PROGRESS     169\nName: count, dtype: Int64\n"
+      }
+    ]
+  },
+  {
+    "id": 108,
+    "cell_type": "markdown",
+    "source": "### **5.7 severity**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 109,
+    "cell_type": "code",
+    "source": "print(js['severity'].dropna().unique())\nprint(js['severity'].value_counts(dropna=False))",
+    "execution_count": 196,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "['Critical' 'H' 'P4' 'Low' 'LOW' 'M' 'P2' 'Medium' 'P3' 'CRITICAL'\n 'MEDIUM' 'P1' 'HIGH' 'High' 'L' 'CRIT']\nseverity\nP3          246\nMEDIUM      237\nM           235\nMedium      226\nP4          225\nLOW         221\nL           220\nLow         214\nP2          150\nH           138\nHIGH        138\nHigh        134\nCRIT         59\nP1           58\nCritical     45\nCRITICAL     36\nName: count, dtype: int64\n"
+      }
+    ]
+  },
+  {
+    "id": 110,
+    "cell_type": "code",
+    "source": "js['severity'] = (js['severity'].astype('string').str.strip()\n    .replace({\n        'Critical': 'High','CRITICAL': 'High','CRIT': 'High','P1': 'High','P2': 'High','H': 'High','HIGH': 'High',\n        'Medium': 'Medium','MEDIUM': 'Medium','M': 'Medium','P3': 'Medium',\n        'Low': 'Low','LOW': 'Low','L': 'Low','P4': 'Low'\n    }))\nprint(js['severity'].value_counts())",
+    "execution_count": 197,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "severity\nMedium    944\nLow       880\nHigh      758\nName: count, dtype: Int64\n"
+      }
+    ]
+  },
+  {
+    "id": 111,
+    "cell_type": "markdown",
+    "source": "### **5.8 channel**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 112,
+    "cell_type": "code",
+    "source": "print(js['channel'].dropna().unique())\nprint(js['channel'].value_counts(dropna=False))",
+    "execution_count": 198,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "['ivr' 'Call Center' 'IVR' 'App' 'Branch' 'chatbot' 'CHATBOT' 'Email']\nchannel\nEmail          350\nBranch         339\nivr            331\nCHATBOT        320\nIVR            318\nApp            317\nchatbot        316\nCall Center    291\nName: count, dtype: int64\n"
+      }
+    ]
+  },
+  {
+    "id": 113,
+    "cell_type": "code",
+    "source": "js['channel'] = (\n    js['channel']\n    .astype('string')\n    .str.strip()\n    .replace({\n        'ivr': 'Call','IVR': 'Call','Call Center': 'Call',\n        'App': 'App',\n        'Branch': 'Branch',\n        'chatbot': 'Chatbot','CHATBOT': 'Chatbot',\n        'Email': 'Email'}))\nprint(js['channel'].value_counts())",
+    "execution_count": 199,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "channel\nCall       940\nChatbot    636\nEmail      350\nBranch     339\nApp        317\nName: count, dtype: Int64\n"
+      }
+    ]
+  },
+  {
+    "id": 114,
+    "cell_type": "markdown",
+    "source": "### **5.9 status**",
+    "execution_count": null,
+    "outputs": []
+  },
+  {
+    "id": 115,
+    "cell_type": "code",
+    "source": "print(js.head())",
+    "execution_count": 200,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "  complaint_id       txn_id   user_id merchant_id transaction_timestamp  \\\n0   CBK0002082  TXN00004325  USR97580     MCH1127            2026-01-28   \n1   CBK0001941  TXN00003720  USR54113     MCH3835            2026-02-25   \n2   CBK0001799  TXN00012539  USR17980     MCH3700            2026-02-04   \n3   CBK0002465  TXN00017802  USR76148     MCH4534            2026-03-30   \n4   CBK0001870  TXN00015944  USR24660     MCH1686            2026-01-09   \n\n  reported_timestamp  disputed_amount             reason_code  \\\n0         2026-02-01             <NA>  Merchant Not Delivered   \n1         2026-03-05           414.69       Login Compromised   \n2         2026-02-05           7039.0          Customer Issue   \n3         2026-04-01          1303.05              No Service   \n4         2026-01-14          1459.42  Merchant Service Issue   \n\n                                      complaint_text resolution_status  \\\n0             Customer Says Amount Was Debited Twice            CLOSED   \n1  User Reports Money Deducted But Merchant Denie...       IN PROGRESS   \n2   Merchant Service Was Not Delivered After Payment           Pending   \n3  Suspicious Highvalue Payment Disputed By Custo...          Rejected   \n4   Merchant Service Was Not Delivered After Payment       IN PROGRESS   \n\n  bank_response_timestamp severity channel  \n0              2026-02-10     High    Call  \n1              2026-12-03     High    Call  \n2              2026-06-03      Low    Call  \n3              2026-04-07     High    Call  \n4              2026-01-26      Low     App  \n"
+      }
+    ]
+  },
+  {
+    "id": 116,
+    "cell_type": "code",
+    "source": "print(js.shape)",
+    "execution_count": 201,
+    "outputs": [
+      {
+        "type": "stream",
+        "name": "stdout",
+        "text": "(2582, 13)\n"
+      }
+    ]
+  }
+]
