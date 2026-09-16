@@ -13,14 +13,27 @@
 
 ---
 
-## 📊 EDA & Preprocessing (Google Colab Workflow)
+## 📊 EDA & Data Preprocessing Workflow
 
-Data cleaning and Exploratory Data Analysis (EDA) were executed in Google Colab (`data-cleaned.ipynb`):
+Before deriving any analytical findings or building the dashboard, the raw dataset underwent a comprehensive EDA and data preprocessing pipeline in Google Colab (`data-cleaned.ipynb`):
 
-1. **Data Cleaning & Sanitization**: Filtered invalid records, formatted timestamps, and structured merchant category codes.
-2. **Feature Engineering**: Built custom metrics for dispute ratios, KYC status correlations, and repeat user transaction frequencies.
-3. **Anomaly Detection**: Flagged high-volume chargeback spikes and isolated merchant accounts with excessive dispute ratios (>2.5%).
-4. **Data Packaging**: Aggregated 20,000+ raw records into structured JSON payloads (`fintech_processed_data.json`) for zero-latency dashboard rendering.
+1. **Data Parsing & Ingestion**: Parsed raw multi-source CSV and JSON files (transactions, merchant profiles, KYC logs, dispute records) into unified structured DataFrames.
+2. **Data Integrity & Consistency Checks**: Audited missing values, removed duplicate transactions, validated foreign-key references across merchant/user IDs, and enforced schema integrity.
+3. **Data Standardization**: Standardized transaction status categories (`SUCCESS`, `FAILED`, `PENDING`), merchant risk tiers, and date-time formats to consistent ISO standards across all 20,000+ records.
+4. **Data Normalization & Scaling**: Applied log transformation and min-max scaling to continuous variables (transaction amounts, dispute frequencies) to prevent skewness in risk score calculations.
+5. **Feature Engineering & Anomaly Detection**: Created engineered features such as chargeback-to-volume ratios, KYC risk scores, and repeat dispute velocity indicators to detect 128 fraud ring users.
+6. **Dataset Packaging**: Exported the complete preprocessed dataset into structured JSON feeds (`fintech_processed_data.json` & `data_cleaned_notebook.json`), forming the foundational data layer from which all dashboard findings were extracted.
+
+---
+
+## 💡 Key Analytical Findings
+
+After processing the full dataset, the following critical insights were identified:
+
+* **High Chargeback Rate (12.91%)**: Totaled ₹63.18 Lakhs across 2,582 dispute cases out of ₹23.92 Cr processed volume—well above the 2.5% industry safety threshold.
+* **Organized Fraud Rings**: Isolated **128 repeat dispute users** operating in coordinated fraud clusters targeting specific merchant categories.
+* **KYC Non-Compliance Risk**: KYC-Rejected & Pending merchants exhibited the highest dispute rate (**14.51%**), proving unverified onboarding directly drives loss volume.
+* **Transaction Failure Rate (29.18%)**: High technical failure rate (29.18%) paired with pending transactions (2.7%) linked to high dispute retry attempts.
 
 ---
 
