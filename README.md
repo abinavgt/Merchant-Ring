@@ -6,8 +6,6 @@
 
 ## 📊 EDA & Data Preprocessing Workflow - [Access Notebook](./data-cleaned.ipynb)
 
-![Final Master Classification - Data Preprocessing Architecture](./assets/data_preprocessing_workflow.jpg)
-
 Before deriving any analytical findings or building the dashboard, the raw dataset underwent a comprehensive EDA and data preprocessing pipeline in Google Colab (`data-cleaned.ipynb`):
 
 1. **Data Parsing & Ingestion**: Parsed raw multi-source CSV and JSON files (transactions, merchant profiles, KYC logs, dispute records) into unified structured DataFrames.
@@ -16,6 +14,14 @@ Before deriving any analytical findings or building the dashboard, the raw datas
 4. **Data Normalization & Scaling**: Applied log transformation and min-max scaling to continuous variables (transaction amounts, dispute frequencies) to prevent skewness in risk score calculations.
 5. **Feature Engineering & Anomaly Detection**: Created engineered features such as chargeback-to-volume ratios, KYC risk scores, and repeat dispute velocity indicators to detect 128 fraud ring users.
 6. **Dataset Packaging**: Exported the complete preprocessed dataset into structured JSON feeds (`fintech_processed_data.json` & `data_cleaned_notebook.json`), forming the foundational data layer from which all dashboard findings were extracted.
+
+<br/>
+
+<div align="center">
+
+![Final Master Classification - Data Preprocessing Architecture](./assets/data_preprocessing_workflow.jpg)
+
+</div>
 
 ---
 
