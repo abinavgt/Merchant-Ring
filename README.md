@@ -37,7 +37,6 @@ After processing the full dataset, the following critical insights were identifi
 * **KYC Non-Compliance Risk**: KYC-Rejected & Pending merchants exhibited the highest dispute rate (**14.51%**), proving unverified onboarding directly drives loss volume.
 * **Transaction Failure Rate (29.18%)**: High technical failure rate (29.18%) paired with pending transactions (2.7%) linked to high dispute retry attempts.
 
----
 
 ###  Analytical Visualizations & Chart Insights
 
