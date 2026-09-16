@@ -6,6 +6,8 @@
 
 ##  EDA & Data Preprocessing Workflow
 
+![Final Master Classification - Data Preprocessing Architecture](./assets/data_preprocessing_workflow.jpg)
+
 Before deriving any analytical findings or building the dashboard, the raw dataset underwent a comprehensive EDA and data preprocessing pipeline in Google Colab (`data-cleaned.ipynb`):
 
 1. **Data Parsing & Ingestion**: Parsed raw multi-source CSV and JSON files (transactions, merchant profiles, KYC logs, dispute records) into unified structured DataFrames.
@@ -41,6 +43,8 @@ After processing the full dataset, the following critical insights were identifi
 
 ```
 Merchant-Ring/
+├── assets/                         # Documentation assets & workflow diagrams
+│   └── data_preprocessing_workflow.jpg
 ├── data-cleaned.ipynb              # Google Colab notebook (EDA & Preprocessing)
 ├── index.html                      # Entry HTML with page title & fonts
 ├── package.json                    # Dependencies and build scripts
