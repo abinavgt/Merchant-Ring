@@ -39,12 +39,57 @@ After processing the full dataset, the following critical insights were identifi
 
 ---
 
+### 📈 Analytical Visualizations & Chart Insights
+
+<div align="center">
+
+<details open>
+  <summary><b>📊 Click to Toggle Visualizations Gallery</b></summary>
+  <br/>
+  
+  <table width="100%">
+    <tr>
+      <td width="50%" align="center">
+        <h4>1. Successful vs Failed Transactions</h4>
+        <img src="./assets/success_vs_failed_transactions.png" alt="Successful vs Failed Transactions" width="100%" style="border-radius: 8px; transition: transform 0.3s ease-in-out;" />
+        <p><i>Daily logs of green (success) vs red (failed) transactions</i></p>
+      </td>
+      <td width="50%" align="center">
+        <h4>2. Merchant Category Chargebacks</h4>
+        <img src="./assets/merchant_category_chargebacks.png" alt="Merchant Category Chargeback Rate" width="100%" style="border-radius: 8px; transition: transform 0.3s ease-in-out;" />
+        <p><i>MCC category risk performance breakdown</i></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" align="center">
+        <h4>3. Chargeback Reason Mapping</h4>
+        <img src="./assets/chargeback_reason_mapping.png" alt="Chargeback Reason Category Mapping" width="100%" style="border-radius: 8px; transition: transform 0.3s ease-in-out;" />
+        <p><i>Distribution across top 5 complaint categories</i></p>
+      </td>
+      <td width="50%" align="center">
+        <h4>4. KYC Status vs Chargeback Rate %</h4>
+        <img src="./assets/kyc_status_chargebacks.png" alt="KYC Status vs Chargeback Rate" width="100%" style="border-radius: 8px; transition: transform 0.3s ease-in-out;" />
+        <p><i>Dispute risk: Rejected (14.51%), Pending (11.21%), Verified (12.93%)</i></p>
+      </td>
+    </tr>
+  </table>
+
+</details>
+
+</div>
+
+---
+
 ##  Repository Structure
 
 ```
 Merchant-Ring/
-├── assets/                         # Documentation assets & workflow diagrams
-│   └── data_preprocessing_workflow.jpg
+├── assets/                         # Documentation assets & visualization charts
+│   ├── data_preprocessing_workflow.jpg
+│   ├── success_vs_failed_transactions.png
+│   ├── merchant_category_chargebacks.png
+│   ├── chargeback_reason_mapping.png
+│   └── kyc_status_chargebacks.png
 ├── data-cleaned.ipynb              # Google Colab notebook (EDA & Preprocessing)
 ├── index.html                      # Entry HTML with page title & fonts
 ├── package.json                    # Dependencies and build scripts
