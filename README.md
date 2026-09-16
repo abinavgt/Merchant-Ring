@@ -39,7 +39,7 @@ After processing the full dataset, the following critical insights were identifi
 
 ---
 
-### 📈 Analytical Visualizations & Chart Insights
+###  Analytical Visualizations & Chart Insights
 
 <div align="center">
 
@@ -111,7 +111,7 @@ Merchant-Ring/
 
 ---
 
-## 🚀 Quick Setup
+##  Quick Setup
 
 1. **Clone the repository**:
    ```bash
@@ -136,7 +136,7 @@ Merchant-Ring/
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 * **Model Building**: Google Colab
 * **Frontend**: React, Tailwind CSS, Framer Motion, HTML
 * **Visualizations**: Recharts, Lucide React Icons
