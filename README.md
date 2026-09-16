@@ -89,17 +89,17 @@ After processing the full dataset, the following critical insights were identifi
 
 ```
 Merchant-Ring/
-├── assets/                         # Documentation assets & visualization charts
+├── assets/                                      
 │   ├── data_preprocessing_workflow.jpg
 │   ├── success_vs_failed_transactions.png
 │   ├── merchant_category_chargebacks.png
 │   ├── chargeback_reason_mapping.png
 │   └── kyc_status_chargebacks.png
 ├── data-cleaned.ipynb              # Google Colab notebook (EDA & Preprocessing)
-├── index.html                      # Entry HTML with page title & fonts
-├── package.json                    # Dependencies and build scripts
-├── vercel.json                     # Vercel deployment configuration
-├── vite.config.js                  # Vite configuration
+├── index.html                      
+├── package.json                    # dependencies & script
+├── vercel.json                     
+├── vite.config.js                  
 └── src/
     ├── App.jsx                     # Main application shell & tab routing
     ├── components/
@@ -110,8 +110,8 @@ Merchant-Ring/
     │   ├── SlicersBar.jsx          # Global filter controls
     │   └── sections/               # Tab sections (Overview, Risk, Fraud Hub)
     └── data/
-        ├── data_cleaned_notebook.json # Formatted notebook JSON payload
-        └── fintech_processed_data.json # Aggregated dataset metrics
+        ├── data_cleaned_notebook.json 
+        └── fintech_processed_data.json 
 ```
 
 ---
